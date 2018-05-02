@@ -1,0 +1,153 @@
+﻿{
+  "swagger": "2.0",
+  "info": {
+    "description": "Alarm Ingest",
+    "version": "1.0.0",
+    "title": "Azure CAM Ingest NON-PROD",
+    "contact": {
+      "email": "neil.middleton@tr.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "host": "compassalarmingestppe.azurewebsites.net",
+  "basePath": "/api",
+  "tags": [
+    {
+      "name": "alarm",
+      "description": "Everything about your Alarm",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "https://thehub.thomsonreuters.com/docs/DOC-851597"
+      }
+    }
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "paths": {
+    "/alarm-ingest": {
+      "post": {
+        "tags": [
+          "alarm"
+        ],
+        "summary": "Send an alarm",
+        "description": "",
+        "operationId": "sendAlarm",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Alarm object that needs to be sent",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Alarm"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "ocp-apim-subscription-key",
+      "in": "header"
+    }
+  },
+  "definitions": {
+    "Alarm": {
+      "type": "object",
+      "properties": {
+        "reporter": {
+          "type": "string",
+          "description": "The registered system reporting the alarm"
+        },
+        "end_point_id": {
+          "type": "string",
+          "description": "The ID of the host/application"
+        },
+        "category": {
+          "type": "string",
+          "description": "What specific type of problem being reported?"
+        },
+        "message": {
+          "type": "string",
+          "description": "The message to the operator describing the problem"
+        },
+        "informer": {
+          "type": "string",
+          "description": "The host sending this alarm"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status (severity) if the alarm",
+          "enum": [
+            "CRITICAL",
+            "WARNING",
+            "OK"
+          ]
+        },
+        "alarm_type": {
+          "type": "string",
+          "description": "What entity is sending the alarm",
+          "enum": [
+            "host",
+            "application"
+          ]
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "The ISO Timestamp of when this occurred (pref to millisec)",
+          "enum": [
+            "host",
+            "application"
+          ]
+        }
+      },
+      "example": {
+        "reporter": "azure",
+        "end_point_id": "some_host_or_application_id",
+        "alarm_type": "host",
+        "status": "CRITICAL",
+        "category": "the_type_of_alarm",
+        "message": "Ignore this test from Azure",
+        "informer": "some_host_or_application_id",
+        "occurred_at": "2018-03-23T14:00:45:123Z",
+        "domain": {
+          "cloud_tags": {
+            "tr-environment-type": "PRE-PRODUCTION",
+            "tr-financial-identifier": "12345678",
+            "tr-application-asset-insight-id": "21212"
+          }
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Find out more about CAM",
+    "url": "https://thehub.thomsonreuters.com/groups/compass-monitoring-alarm-management-cam"
+  }
+}

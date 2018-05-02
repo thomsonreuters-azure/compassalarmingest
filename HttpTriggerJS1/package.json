@@ -1,0 +1,24 @@
+{
+  "name": "azure_alarm_ingest-TimeTriggerJS1",
+  "version": "0.1.0",
+  "author": "Compass Alarm Development",
+  "description": "Compass Alarm Ingest API for Azure",
+  "contributors": [
+    {
+      "name": "Neil Middleton",
+      "email": "neil.middleton@thomsonreuters.com"
+    }
+  ],
+  "dependencies": {
+    "lodash": "^4.17.5",
+    "moment": "^2.21.0",
+    "q": "^1.5.1",
+    "request": "^2.85.0",
+    "request-promise": "^4.2.2"
+  },
+  "noAnalyze": true,
+  "license": "Apache",
+  "engines": {
+    "node": "~0.10.0 || ~4.4.7"
+  }
+}

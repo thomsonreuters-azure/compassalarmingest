@@ -1,0 +1,19 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "WEBSITE_SLOT_NAME": "preprod",
+    "FUNCTIONS_EXTENSION_VERSION": "~1",
+    "ScmType": "None",
+    "AzureWebJobsSecretStorageType": "Blob",
+    "WEBSITE_AUTH_ENABLED": "False",
+    "REMOTEDEBUGGINGVERSION": "11.0.611103.400",
+    "FUNCTION_APP_EDIT_MODE": "readwrite",
+    "APPINSIGHTS_INSTRUMENTATIONKEY": "64905a91-e559-44f6-92b9-ffb055c3c4c2",
+    "AzureWebJobsDashboard": "DefaultEndpointsProtocol=https;AccountName=eastus2compassalarmmgmt;AccountKey=uq2/D2uzm2lnL+l+qtPYjWq6kCKyRUjheUnQZbmiWfKrUZrREn9jErbmzYeBmeqPQhJI/FwenSP/SB/M9cCvRQ==",
+    "WEBSITE_NODE_DEFAULT_VERSION": "6.5.0",
+    "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "DefaultEndpointsProtocol=https;AccountName=eastus2compassalarmmgmt;AccountKey=uq2/D2uzm2lnL+l+qtPYjWq6kCKyRUjheUnQZbmiWfKrUZrREn9jErbmzYeBmeqPQhJI/FwenSP/SB/M9cCvRQ==",
+    "WEBSITE_CONTENTSHARE": "compassalarmingest-2c5da0fb",
+    "WEBSITE_SITE_NAME": "compassalarmingest",
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=eastus2compassalarmmgmt;AccountKey=uq2/D2uzm2lnL+l+qtPYjWq6kCKyRUjheUnQZbmiWfKrUZrREn9jErbmzYeBmeqPQhJI/FwenSP/SB/M9cCvRQ=="
+  }
+}
