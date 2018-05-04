@@ -9,7 +9,7 @@ function ConvertToCam() {
 
     let provenance = {
         informed_at: moment.utc().toISOString(),
-        informer: 'Azure CAM API'
+        informer: 'Azure CAM API ' + process.env['WEBSITE_SITE_NAME']
     };
 
     function convertCAMtoCAM(cam_alarm) {
