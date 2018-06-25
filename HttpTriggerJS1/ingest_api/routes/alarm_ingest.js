@@ -17,20 +17,21 @@ exports.ingest = function (req, context) {
             'context.timestamp'
         ];
         _.forEach(datetime_properties, function (datetime_property) {
+            var date_value = _.get(body, datetime_property);
             if (_.has(body, datetime_property)) {
-                context.log('Has timestamp:', datetime_property, body[datetime_property]);
-                if (moment.isDate(body[datetime_property])){
-                    body[datetime_property] = moment.utc(body[datetime_property]).toISOString();
-                } else if (moment.isMoment(body[datetime_property])){
-                    body[datetime_property] = body[datetime_property].toISOString();
-                } else if (!_.isString(body[datetime_property])) {
+                context.log('Has timestamp:', datetime_property, date_value);
+                if (moment.isDate(_.get(body, datetime_property))){
+                    _.set(body, datetime_property, moment.utc(date_value).toISOString());
+                } else if (moment.isMoment(date_value)){
+                    _.set(body, datetime_property, date_value.toISOString());
+                } else if (!_.isString(date_value)) {
                     context.log('Timestamp needs quotes');
-                    body[datetime_property] = '\'' + body[datetime_property] + '\'';
-                    context.log('Quoted timestamp:', body[datetime_property]);
-                    if (!_.isString(body[datetime_property])) {
+                    _.set(body, datetime_property, '\'' + _.get(body, datetime_property) + '\'');
+                    context.log('Quoted timestamp:', _.get(body, datetime_property));
+                    if (!_.isString(date_value)) {
                         context.log('Timestamp needs replacing:');
-                        body[datetime_property] = moment.utc().toISOString();
-                        context.log('Replaced timestamp:', body[datetime_property]);
+                        _.set(body, datetime_property, moment.utc().toISOString());
+                        context.log('Replaced timestamp:', _.get(body, datetime_property));
                     }
                 }
             }
