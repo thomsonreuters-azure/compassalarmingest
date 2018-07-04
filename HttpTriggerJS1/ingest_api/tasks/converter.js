@@ -28,7 +28,7 @@ function ConvertToCam() {
         return tr_log_alarm //TR Log is passed straight through to CAM without conversion
     }
 
-    function convertAzuretoCAM(azure_alarm, context) {
+    function convertAzuretoCAM(azure_alarm, getTags, context) {
 
         let alarm_map = {
             'Activated': 'CRITICAL',
@@ -69,7 +69,7 @@ function ConvertToCam() {
     }
 
 
-    function convertAzureHealthtoCAM(azure_alarm, context) {
+    function convertAzureHealthtoCAM(azure_alarm, getTags, context) {
 
         let alarm_map = {
             'Activated': 'CRITICAL',
@@ -171,13 +171,17 @@ function ConvertToCam() {
     var subs_apiver = '2018-02-01';
 
     var getToken = function (resource, apiver, context) {
-            context.log('Getting Token...');
+        if (context === 'test'){
+            return
+        }
+            context.log('Getting Token...',resource, apiver);
             var options = {
                 uri: process.env["MSI_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
                 headers: {
                     'Secret': process.env["MSI_SECRET"]
                 }
             };
+            console.log('OPTS',JSON.stringify(options ,null,4));
             return rp(options);
         },
         readResourceGroups = function (resource_group_metadata, apiver, token, context) {
@@ -195,8 +199,8 @@ function ConvertToCam() {
                 resource_group_name: event.context.resourceGroupName,
                 subscription_id: event.context.subscriptionId
             };
-        },
-        getTags = function (event, context) {
+        };
+        this.getTags = function (event, context) {
             var tags = {},
                 resource_group_metadata = getAzureRG(event);
             return getToken('https://management.azure.com/', '2017-09-01', context)
@@ -248,10 +252,10 @@ function ConvertToCam() {
             return q(convertTRLogV4toCAM(alarm));
         }
         if (alarm_schema === 'Azure Metric Alarm' && alarm_schema_version === 1.0) {
-            return q(convertAzuretoCAM(alarm, context));
+            return q(convertAzuretoCAM(alarm, this.getTags, context));
         }
         if (alarm_schema === 'Azure Service Health' && alarm_schema_version === 1.0) {
-            return q(convertAzureHealthtoCAM(alarm, context));
+            return q(convertAzureHealthtoCAM(alarm, this.getTags, context));
         }
         if (alarm_schema === 'DataDog Service Health' && alarm_schema_version === 1.0) {
             return q(convertDataDogHealthToCAM(alarm));

@@ -92,7 +92,7 @@ const AzureMetricAlarm = {
                 condition: {type: 'object', allowEmpty: false, required: true},
                 resourceName: {type: 'string', allowEmpty: false, required: true},
                 resourceType: {type: 'string', allowEmpty: false, required: true},
-                resourceRegion: {type: 'string', allowEmpty: false, required: true},
+                resourceRegion: {type: 'string', allowEmpty: false, required: false},
                 portalLink: {type: 'string', allowEmpty: false, required: true},
                 timestamp: {type: ['string', 'object'], allowEmpty: false, required: true},
                 id: {type: 'string', allowEmpty: false, required: true},

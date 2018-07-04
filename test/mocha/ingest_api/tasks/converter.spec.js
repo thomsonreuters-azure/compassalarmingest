@@ -1,7 +1,7 @@
 'use strict';
 
 const
-    root = '../../../../',
+    root = '../../../../HttpTriggerJS1/',
 
     q = require('q'),
     supertest = require('supertest'),
@@ -9,8 +9,8 @@ const
     chai = require('chai'),
     expect = chai.expect,
     sinonChai = require('sinon-chai'),
-
-    Converter = require(root + 'HttpTriggerJS1/ingest_api/tasks/converter'),
+    nock = require('nock'),
+    Converter = require(root + 'ingest_api/tasks/converter'),
     context = {
         log: function (msg) {
             console.log(msg);
@@ -27,8 +27,20 @@ describe('converter', function () {
     beforeEach(function () {
 
         this.clock = sinon.useFakeTimers(1456305586000); // epoch of '2016-02-24T09:19:46.000Z'
+        // process.env['MSI_ENDPOINT'] = 'http://127.0.0.1:41639/MSI/token/';
+        // process.env['MSI_SECRET'] = 'secret';
+        process.env['WEBSITE_SITE_NAME'] = 'production';
 
         converter = new Converter();
+        converter.getTags = function () {
+            var deferred = q.defer();
+            deferred.resolve({
+                'tr-environment-type': 'PROD',
+                'tr-application-asset-insight-id': '203773',
+                'tr-financial-identifier': '23308'
+            });
+            return deferred.promise;
+        };
         sandbox = sinon.sandbox.create();
 
 
@@ -70,7 +82,7 @@ describe('converter', function () {
                     provenance: {
                         azure_alarm_ingest_api: {
                             informed_at: '2016-02-24T09:19:46.000Z',
-                            informer: 'Azure ASE CAM API'
+                            informer: 'Azure CAM API production'
                         }
                     }
                 }
@@ -151,10 +163,15 @@ describe('converter', function () {
                       },
                       properties: {'$type': 'Microsoft.WindowsAzure.Management.Common.Storage.CasePreservedDictionary`1[[System.String, mscorlib]], Microsoft.WindowsAzure.Management.Common.Storage'}
                     },
+                    cloud_tags: {
+                        'tr-environment-type': 'PROD',
+                        'tr-application-asset-insight-id': '203773',
+                        'tr-financial-identifier': '23308'
+                    },
                     provenance: {
                         azure_alarm_ingest_api: {
                             informed_at: '2016-02-24T09:19:46.000Z',
-                            informer: 'Azure ASE CAM API'
+                            informer: 'Azure CAM API production'
                         }
                     }
                 },
@@ -170,6 +187,100 @@ describe('converter', function () {
                 .then(function (converted) {
                     expect(converted).to.deep.equal(expected_response);
                 });
+        });
+        it('Converts a received Azure Metric Webtest alarm (without region)', function (done) {
+
+            let azure_alarm = {
+                'status': 'Activated',
+                'context': {
+                    'id': '/subscriptions/b5351923-2bf3-4114-b0b0-cd1046e0677d/resourceGroups/eastus2-connected-risk-nonprod/providers/microsoft.insights/alertrules/testdc-testdc-a72d304e-66d1-4f3c-a23f-62a5c718ab45',
+                    'name': 'testdc-testdc-a72d304e-66d1-4f3c-a23f-62a5c718ab45',
+                    'description': '',
+                    'conditionType': 'Webtest',
+                    'condition': {
+                        'webTestName': 'testdc-testdc',
+                        'failureDetails': '1 primary requests, 0 dependant requests and 0 conditional rules failed<br/><br/>Http Error (subtype "Unexpected 404 - NotFound") occured at 06/22/2018 13:29:50 (UTC) for Uri "<a href=\"https://crazure.thomsonreuters.com/testdc\" target=\"_blank\">https://crazure.thomsonreuters.com/testdc</a>", step #1 with the error ""404 - NotFound" does not match the expected status "200 - OK".".<br/><br/>',
+                        'metricName': 'Failed Locations',
+                        'metricUnit': 'locations',
+                        'metricValue': '3',
+                        'threshold': '3',
+                        'timeAggregation': 'Sum',
+                        'operator': 'GreaterThan',
+                        'windowSize': '5'
+                    },
+                    'subscriptionId': 'b5351923-2bf3-4114-b0b0-cd1046e0677d',
+                    'resourceGroupName': 'eastus2-connected-risk-nonprod',
+                    'timestamp': '06/22/2018 13:29:50',
+                    'resourceName': 'testdc',
+                    'resourceType': 'components',
+                    'resourceId': '/subscriptions/b5351923-2bf3-4114-b0b0-cd1046e0677d/resourceGroups/eastus2-connected-risk-nonprod/providers/microsoft.insights/components/testdc',
+                    'portalLink': 'https://go.microsoft.com/fwlink/?LinkID=615149&subscriptionId=b5351923-2bf3-4114-b0b0-cd1046e0677d&resourceGroup=eastus2-connected-risk-nonprod&resourceType=webtests&resourceName=testdc-testdc&tc=7gIAAB-LCAAAAAAABACtkUFLw0AQhd-fMRdJSbdNYo4iCKInLQje0m5KS2sjTat_329mK1QQ8SDLDLNv3s68mW2V6Vp3elanuVbqORuwFkvYAT_gM-JSE2ysRoEox8-19GgKOsbnIIVbroUiWAFaUaPA15xIpY76VvOID87steN0RNYvgu21Jrsh2nn2DaT311-KIuzvt_zPuRwFNb0j6k1hB1JxTLFNY1Mllk269GzgVoLWcK6I5_BKunxgt9zX2rr2Sz2gdAFyADPtA4yBOOqCai0-UDP5_9rqSO--sSP1t6ftRu8_8v2-nvr11Bl4uYd_rrDzjduGEu-e2ufHetpfPbqmkv6N4xVxBT7zuHC9Nk3g1oDf_Ij_riVlZ3rydxOs9l1MfVbrm8Eo_B9yr29bC2ze2GnH9q8pMt4LLzJ9AseLm0PuAgAA0&aadTenantId=h'
+                }
+            };
+
+
+            let alarm_schema = 'Azure Metric Alarm',
+                alarm_schema_version = 1.0;
+
+            let expected_response = {
+                'alarm_type': 'cloud',
+                'category': 'Failed Locations',
+                'end_point_id': 'testdc',
+                'informer': 'testdc',
+                'message': 'Failed Locations GreaterThan 3 locations',
+                'occurred_at': '2018-06-22T13:29:50.000Z',
+                'reporter': 'Azure',
+                'status': 'CRITICAL',
+                'domain': {
+                    'cloud_account_id': 'b5351923-2bf3-4114-b0b0-cd1046e0677d',
+                    'cloud_namespace': 'components',
+                    'cloud_region_name': undefined,
+                    'cloud_raw_alarm': {
+                        'status': 'Activated',
+                        'context': {
+                            'id': '/subscriptions/b5351923-2bf3-4114-b0b0-cd1046e0677d/resourceGroups/eastus2-connected-risk-nonprod/providers/microsoft.insights/alertrules/testdc-testdc-a72d304e-66d1-4f3c-a23f-62a5c718ab45',
+                            'name': 'testdc-testdc-a72d304e-66d1-4f3c-a23f-62a5c718ab45',
+                            'description': '',
+                            'conditionType': 'Webtest',
+                            'condition': {
+                                'webTestName': 'testdc-testdc',
+                                'failureDetails': '1 primary requests, 0 dependant requests and 0 conditional rules failed<br/><br/>Http Error (subtype \"Unexpected 404 - NotFound\") occured at 06/22/2018 13:29:50 (UTC) for Uri \"<a href=\"https://crazure.thomsonreuters.com/testdc\" target=\"_blank\">https://crazure.thomsonreuters.com/testdc</a>\", step #1 with the error \"\"404 - NotFound\" does not match the expected status \"200 - OK\".\".<br/><br/>',
+                                'metricName': 'Failed Locations',
+                                'metricUnit': 'locations',
+                                'metricValue': '3',
+                                'threshold': '3',
+                                'timeAggregation': 'Sum',
+                                'operator': 'GreaterThan',
+                                'windowSize': '5'
+                            },
+                            'subscriptionId': 'b5351923-2bf3-4114-b0b0-cd1046e0677d',
+                            'resourceGroupName': 'eastus2-connected-risk-nonprod',
+                            'timestamp': '06/22/2018 13:29:50',
+                            'resourceName': 'testdc',
+                            'resourceType': 'components',
+                            'resourceId': '/subscriptions/b5351923-2bf3-4114-b0b0-cd1046e0677d/resourceGroups/eastus2-connected-risk-nonprod/providers/microsoft.insights/components/testdc',
+                            'portalLink': 'https://go.microsoft.com/fwlink/?LinkID=615149&subscriptionId=b5351923-2bf3-4114-b0b0-cd1046e0677d&resourceGroup=eastus2-connected-risk-nonprod&resourceType=webtests&resourceName=testdc-testdc&tc=7gIAAB-LCAAAAAAABACtkUFLw0AQhd-fMRdJSbdNYo4iCKInLQje0m5KS2sjTat_329mK1QQ8SDLDLNv3s68mW2V6Vp3elanuVbqORuwFkvYAT_gM-JSE2ysRoEox8-19GgKOsbnIIVbroUiWAFaUaPA15xIpY76VvOID87steN0RNYvgu21Jrsh2nn2DaT311-KIuzvt_zPuRwFNb0j6k1hB1JxTLFNY1Mllk269GzgVoLWcK6I5_BKunxgt9zX2rr2Sz2gdAFyADPtA4yBOOqCai0-UDP5_9rqSO--sSP1t6ftRu8_8v2-nvr11Bl4uYd_rrDzjduGEu-e2ufHetpfPbqmkv6N4xVxBT7zuHC9Nk3g1oDf_Ij_riVlZ3rydxOs9l1MfVbrm8Eo_B9yr29bC2ze2GnH9q8pMt4LLzJ9AseLm0PuAgAA0&aadTenantId=h'
+                        }
+                    },
+                    'provenance': {
+                        'azure_alarm_ingest_api': {
+                            'informed_at': '2016-02-24T09:19:46.000Z',
+                            'informer': 'Azure CAM API production'
+                        }
+                    },
+                    'cloud_tags': {
+                        'tr-environment-type': 'PROD',
+                        'tr-application-asset-insight-id': '203773',
+                        'tr-financial-identifier': '23308'
+                    }
+                }
+            };
+
+            return converter.convertToCam(azure_alarm, alarm_schema, alarm_schema_version,context)
+                .then(function (converted) {
+                    console.log(JSON.stringify(converted ,null,4));
+                    expect(converted).to.deep.equal(expected_response);
+                }).done(done);
         });
 
         it('Uses the received timestamp for Resolved alarms', function () {
@@ -239,10 +350,15 @@ describe('converter', function () {
                     },
                     properties: {'$type': 'Microsoft.WindowsAzure.Management.Common.Storage.CasePreservedDictionary`1[[System.String, mscorlib]], Microsoft.WindowsAzure.Management.Common.Storage'}
                   },
+                    cloud_tags: {
+                        'tr-environment-type': 'PROD',
+                        'tr-application-asset-insight-id': '203773',
+                        'tr-financial-identifier': '23308'
+                    },
                   provenance: {
                     azure_alarm_ingest_api: {
                       informed_at: "2016-02-24T09:19:46.000Z",
-                      informer: "Azure ASE CAM API"
+                      informer: "Azure CAM API production"
                     }
                   }
                 },
@@ -354,10 +470,15 @@ describe('converter', function () {
                       },
                       "properties": {}
                     },
+                    cloud_tags: {
+                        'tr-environment-type': 'PROD',
+                        'tr-application-asset-insight-id': '203773',
+                        'tr-financial-identifier': '23308'
+                    },
                     provenance: {
                         azure_alarm_ingest_api: {
                             informed_at: '2016-02-24T09:19:46.000Z',
-                            informer: 'Azure ASE CAM API'
+                            informer: 'Azure CAM API production'
                         }
                     }
                 },
@@ -512,7 +633,7 @@ describe('converter', function () {
           provenance: {
             azure_alarm_ingest_api: {
               informed_at: '2016-02-24T09:19:46.000Z',
-              informer: 'Azure ASE CAM API'
+              informer: 'Azure CAM API production'
             }
           }
         };
@@ -604,7 +725,7 @@ describe('converter', function () {
                     provenance: {
                         azure_alarm_ingest_api: {
                             informed_at: '2016-02-24T09:19:46.000Z',
-                            informer: 'Azure ASE CAM API'
+                            informer: 'Azure CAM API production'
                         }
                     }
                 },
@@ -753,7 +874,7 @@ describe('converter', function () {
                     provenance: {
                         azure_alarm_ingest_api: {
                             informed_at: '2016-02-24T09:19:46.000Z',
-                            informer: 'Azure ASE CAM API'
+                            informer: 'Azure CAM API production'
                         }
                     }
                 },
@@ -771,6 +892,8 @@ describe('converter', function () {
                     expect(converted).to.deep.equal(expected_response);
                 });
         });
+
+
 
     });
 

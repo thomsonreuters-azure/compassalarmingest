@@ -357,14 +357,7 @@ describe('validator', function () {
                     attribute: 'required',
                     expected: true,
                     message: 'is required',
-                    property: 'context.resourceName',
-                },
-                {
-                    actual: undefined,
-                    attribute: 'required',
-                    expected: true,
-                    message: 'is required',
-                    property: 'context.resourceRegion',
+                    property: 'context.resourceName'
                 }
             ],
             valid: false

@@ -73,7 +73,7 @@ describe('tasks', function () {
                             expect(response.response).to.equal('Alarm Consumed');
                             expect(https_stub).to.have.been.calledWith({
                                 headers: {
-                                    'Content-Length': 442,
+                                    'Content-Length': 350,
                                     'Content-Type': 'application/json',
                                     'x-api-key': 'zOHtS8xIOE8In1uP7ghbP8jmUdVMvoMB4finmmPU'
                                 },
