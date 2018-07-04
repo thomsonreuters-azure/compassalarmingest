@@ -174,14 +174,13 @@ function ConvertToCam() {
         if (context === 'test'){
             return
         }
-            context.log('Getting Token...',resource, apiver);
+            context.log('Getting Token...' + resource + apiver);
             var options = {
                 uri: process.env["MSI_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
                 headers: {
                     'Secret': process.env["MSI_SECRET"]
                 }
             };
-            console.log('OPTS',JSON.stringify(options ,null,4));
             return rp(options);
         },
         readResourceGroups = function (resource_group_metadata, apiver, token, context) {
