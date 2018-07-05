@@ -27,18 +27,16 @@ describe('converter', function () {
     beforeEach(function () {
 
         this.clock = sinon.useFakeTimers(1456305586000); // epoch of '2016-02-24T09:19:46.000Z'
-        // process.env['MSI_ENDPOINT'] = 'http://127.0.0.1:41639/MSI/token/';
-        // process.env['MSI_SECRET'] = 'secret';
         process.env['WEBSITE_SITE_NAME'] = 'production';
 
         converter = new Converter();
         converter.getTags = function () {
             var deferred = q.defer();
-            deferred.resolve({
+            deferred.resolve(converter.withTRStandardTagAddedFromAzureTRTag({
                 'tr-environment-type': 'PROD',
                 'tr-application-asset-insight-id': '203773',
                 'tr-financial-identifier': '23308'
-            });
+            }));
             return deferred.promise;
         };
         sandbox = sinon.sandbox.create();
@@ -166,7 +164,10 @@ describe('converter', function () {
                     cloud_tags: {
                         'tr-environment-type': 'PROD',
                         'tr-application-asset-insight-id': '203773',
-                        'tr-financial-identifier': '23308'
+                        'tr-financial-identifier': '23308',
+                        'tr:environment-type': 'PROD',
+                        'tr:application-asset-insight-id': '203773',
+                        'tr:financial-identifier': '23308'
                     },
                     provenance: {
                         azure_alarm_ingest_api: {
@@ -271,7 +272,10 @@ describe('converter', function () {
                     'cloud_tags': {
                         'tr-environment-type': 'PROD',
                         'tr-application-asset-insight-id': '203773',
-                        'tr-financial-identifier': '23308'
+                        'tr-financial-identifier': '23308',
+                        'tr:environment-type': 'PROD',
+                        'tr:application-asset-insight-id': '203773',
+                        'tr:financial-identifier': '23308'
                     }
                 }
             };
@@ -353,7 +357,10 @@ describe('converter', function () {
                     cloud_tags: {
                         'tr-environment-type': 'PROD',
                         'tr-application-asset-insight-id': '203773',
-                        'tr-financial-identifier': '23308'
+                        'tr-financial-identifier': '23308',
+                        'tr:environment-type': 'PROD',
+                        'tr:application-asset-insight-id': '203773',
+                        'tr:financial-identifier': '23308'
                     },
                   provenance: {
                     azure_alarm_ingest_api: {
@@ -473,7 +480,10 @@ describe('converter', function () {
                     cloud_tags: {
                         'tr-environment-type': 'PROD',
                         'tr-application-asset-insight-id': '203773',
-                        'tr-financial-identifier': '23308'
+                        'tr-financial-identifier': '23308',
+                        'tr:environment-type': 'PROD',
+                        'tr:application-asset-insight-id': '203773',
+                        'tr:financial-identifier': '23308'
                     },
                     provenance: {
                         azure_alarm_ingest_api: {

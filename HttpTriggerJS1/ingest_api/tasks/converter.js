@@ -199,6 +199,14 @@ function ConvertToCam() {
                 subscription_id: event.context.subscriptionId
             };
         };
+        this.withTRStandardTagAddedFromAzureTRTag = function (tags) {
+            _.forEach(_.keys(tags), function (tag_key) {
+                if (_.startsWith(tag_key, 'tr-')) {
+                    tags[tag_key.replace('tr-', 'tr:')] = tags[tag_key];
+                }
+            });
+            return tags;
+        };
         this.getTags = function (event, context) {
             var tags = {},
                 resource_group_metadata = getAzureRG(event);
@@ -228,7 +236,7 @@ function ConvertToCam() {
                                     }
                                 });
                             }
-                            return tags;
+                            return this.withTRStandardTagAddedFromAzureTRTag(tags);
                         })
                         .catch(function (err) {
                             context.log('Error', err);
