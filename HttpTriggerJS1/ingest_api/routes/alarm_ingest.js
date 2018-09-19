@@ -14,7 +14,8 @@ exports.ingest = function (req, context) {
     // Azure bug strips quotes from timestamps making them appear to be an object when they have a dot before millisec
         var datetime_properties = [
             'occurred_at',
-            'context.timestamp'
+            'context.timestamp',
+            'sp-timestamp'
         ];
         _.forEach(datetime_properties, function (datetime_property) {
             var date_value = _.get(body, datetime_property);
