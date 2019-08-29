@@ -287,6 +287,98 @@ describe('converter', function () {
                 }).done(done);
         });
 
+        it('Converts a received Azure Monitor Metric Alert', function (done) {
+
+            let azure_monitor_metric_alert = {
+                "schemaId": "AzureMonitorMetricAlert",
+                "data": {
+                    "version": "2.0",
+                    "status": "Activated",
+                    "context": {
+                        'id': '/subscriptions/b5351923-2bf3-4114-b0b0-cd1046e0677d/resourceGroups/eastus2-connected-risk-nonprod/providers/microsoft.insights/alertrules/testdc-testdc-a72d304e-66d1-4f3c-a23f-62a5c718ab45',
+                        'name': 'testdc-testdc-a72d304e-66d1-4f3c-a23f-62a5c718ab45',
+                        'description': '',
+                        'conditionType': 'Webtest',
+                        'subscriptionId': 'b5351923-2bf3-4114-b0b0-cd1046e0677d',
+                        'resourceGroupName': 'eastus2-connected-risk-nonprod',
+                        'timestamp': '06/22/2018 13:29:50',
+                        'resourceName': 'testdc',
+                        'resourceType': 'components',
+                        'resourceId': '/subscriptions/b5351923-2bf3-4114-b0b0-cd1046e0677d/resourceGroups/eastus2-connected-risk-nonprod/providers/microsoft.insights/components/testdc',
+                        'portalLink': 'https://go.microsoft.com/fwlink/?LinkID=615149&subscriptionId=b5351923-2bf3-4114-b0b0-cd1046e0677d&resourceGroup=eastus2-connected-risk-nonprod&resourceType=webtests&resourceName=testdc-testdc&tc=7gIAAB-LCAAAAAAABACtkUFLw0AQhd-fMRdJSbdNYo4iCKInLQje0m5KS2sjTat_329mK1QQ8SDLDLNv3s68mW2V6Vp3elanuVbqORuwFkvYAT_gM-JSE2ysRoEox8-19GgKOsbnIIVbroUiWAFaUaPA15xIpY76VvOID87steN0RNYvgu21Jrsh2nn2DaT311-KIuzvt_zPuRwFNb0j6k1hB1JxTLFNY1Mllk269GzgVoLWcK6I5_BKunxgt9zX2rr2Sz2gdAFyADPtA4yBOOqCai0-UDP5_9rqSO--sSP1t6ftRu8_8v2-nvr11Bl4uYd_rrDzjduGEu-e2ufHetpfPbqmkv6N4xVxBT7zuHC9Nk3g1oDf_Ij_riVlZ3rydxOs9l1MfVbrm8Eo_B9yr29bC2ze2GnH9q8pMt4LLzJ9AseLm0PuAgAA0&aadTenantId=h',
+                        "condition": {
+                            "windowSize": "PT5M",
+                            "allOf": [
+                                {
+                                    "metricName": "Failed Locations",
+                                    'metricUnit': 'locations',
+                                    "metricNamespace":"microsoft.storage/storageAccounts",
+                                    "dimensions": [
+                                        {
+                                            "name": "AccountResourceId",
+                                            "value": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/Contoso/providers/Microsoft.Storage/storageAccounts/diag500"
+                                        },
+                                        {
+                                            "name": "GeoType",
+                                            "value": "Primary"
+                                        }
+                                    ],
+                                    "operator": "GreaterThan",
+                                    "threshold": "3",
+                                    "timeAggregation": "PT5M",
+                                    "metricValue": 1,
+                                }
+                            ]
+                        }
+                    },
+                    "properties": {
+                        "key1": "value1",
+                        "key2": "value2"
+                    }
+                }
+            };
+
+            let alarm_schema = 'Azure Monitor Metric Alert',
+                alarm_schema_version = 2.0;
+
+            let expected_response = {
+                'alarm_type': 'cloud',
+                'category': 'Failed Locations',
+                'end_point_id': 'testdc',
+                'informer': 'testdc',
+                'message': 'Failed Locations GreaterThan 3 locations',
+                'occurred_at': '2018-06-22T13:29:50.000Z',
+                'reporter': 'Azure',
+                'status': 'CRITICAL',
+                'domain': {
+                    'cloud_account_id': 'b5351923-2bf3-4114-b0b0-cd1046e0677d',
+                    'cloud_namespace': 'components',
+                    'cloud_region_name': undefined,
+                    'cloud_raw_alarm': azure_monitor_metric_alert,
+                    'provenance': {
+                        'azure_alarm_ingest_api': {
+                            'informed_at': '2016-02-24T09:19:46.000Z',
+                            'informer': 'Azure CAM API production'
+                        }
+                    },
+                    'cloud_tags': {
+                        'tr-environment-type': 'PROD',
+                        'tr-application-asset-insight-id': '203773',
+                        'tr-financial-identifier': '23308',
+                        'tr:environment-type': 'PROD',
+                        'tr:application-asset-insight-id': '203773',
+                        'tr:financial-identifier': '23308'
+                    }
+                }
+            };
+
+            return converter.convertToCam(azure_monitor_metric_alert, alarm_schema, alarm_schema_version,context)
+                .then(function (converted) {
+                    console.log(JSON.stringify(converted ,null,4));
+                    expect(converted).to.deep.equal(expected_response);
+                }).done(done);
+        });
+
         it('Uses the received timestamp for Resolved alarms', function () {
 
             let azure_alarm = {

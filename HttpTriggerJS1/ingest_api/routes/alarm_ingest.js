@@ -15,6 +15,7 @@ exports.ingest = function (req, context) {
         var datetime_properties = [
             'occurred_at',
             'context.timestamp',
+            'data.context.timestamp',
             'sp-timestamp'
         ];
         _.forEach(datetime_properties, function (datetime_property) {

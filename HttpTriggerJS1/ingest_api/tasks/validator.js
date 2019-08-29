@@ -143,6 +143,37 @@ const AzureActivityAlarm = {
     }
 };
 
+const AzureMonitorMetricAlert = {
+    properties: {
+        //mandatory fields
+        schemaId: {type: 'string', allowEmpty: false, required: true, enum: ['AzureMonitorMetricAlert']},
+        data: {
+            type: 'object', allowEmpty: false, required: true,
+            properties: {
+                status: {type: 'string', allowEmpty: false, required: true},
+                context: {
+                    type: 'object', allowEmpty: false, required: true,
+                    properties: {
+                        condition: {type: 'object', allowEmpty: false, required: true},
+                        resourceName: {type: 'string', allowEmpty: false, required: true},
+                        resourceType: {type: 'string', allowEmpty: false, required: true},
+                        resourceRegion: {type: 'string', allowEmpty: false, required: false},
+                        portalLink: {type: 'string', allowEmpty: false, required: true},
+                        timestamp: {type: ['string', 'object'], allowEmpty: false, required: true},
+                        id: {type: 'string', allowEmpty: false, required: true},
+                        name: {type: 'string', allowEmpty: false, required: true},
+                        description: {type: 'string', allowEmpty: true, required: true},
+                        conditionType: {type: 'string', allowEmpty: false, required: true},
+                        subscriptionId: {type: 'string', allowEmpty: false, required: true},
+                        resourceId: {type: 'string', allowEmpty: false, required: true},
+                        resourceGroupName: {type: 'string', allowEmpty: false, required: true}
+                    }
+                }
+            }
+        }
+    }
+};
+
 const DataDogHealthAlarm = {
     properties: {
         //mandatory fields
@@ -183,6 +214,11 @@ module.exports = function sanitise(event) {
             valid.valid = false;
             valid.errors = 'Unrecognised Azure alarm type';
         }
+
+    } else if (event.hasOwnProperty('schemaId') && event.hasOwnProperty('data') && event.schemaId === 'AzureMonitorMetricAlert') {
+        valid = revalidator.validate(event, AzureMonitorMetricAlert, {additionalProperties: true});
+        valid.alarm_schema = 'Azure Monitor Metric Alert';
+        valid.alarm_schema_version = 2.0;
 
     } else if (event.hasOwnProperty('schemaId') && event.hasOwnProperty('data')) {
         valid = revalidator.validate(event, AzureActivityAlarm, {additionalProperties: true});
