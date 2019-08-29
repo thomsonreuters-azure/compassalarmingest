@@ -423,6 +423,68 @@ describe('validator', function () {
         expect(response).to.deep.equal(expected_response);
     });
 
+    it('Validates a correct Azure Monitor Metric Alert', function () {
+        let azure_monitor_metric_alert = {
+            "schemaId": "AzureMonitorMetricAlert",
+            "data": {
+                "version": "2.0",
+                "status": "Activated",
+                "context": {
+                    "timestamp": "2018-02-28T10:44:10.1714014Z",
+                    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/Contoso/providers/microsoft.insights/metricAlerts/StorageCheck",
+                    "name": "StorageCheck",
+                    "description": "",
+                    "conditionType": "SingleResourceMultipleMetricCriteria",
+                    "severity":"3",
+                    "condition": {
+                        "windowSize": "PT5M",
+                        "allOf": [
+                            {
+                                "metricName": "Transactions",
+                                "metricNamespace":"microsoft.storage/storageAccounts",
+                                "dimensions": [
+                                    {
+                                        "name": "AccountResourceId",
+                                        "value": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/Contoso/providers/Microsoft.Storage/storageAccounts/diag500"
+                                    },
+                                    {
+                                        "name": "GeoType",
+                                        "value": "Primary"
+                                    }
+                                ],
+                                "operator": "GreaterThan",
+                                "threshold": "0",
+                                "timeAggregation": "PT5M",
+                                "metricValue": 1
+                            }
+                        ]
+                    },
+                    "subscriptionId": "00000000-0000-0000-0000-000000000000",
+                    "resourceGroupName": "Contoso",
+                    "resourceName": "diag500",
+                    "resourceType": "Microsoft.Storage/storageAccounts",
+                    "resourceId": "/subscriptions/1e3ff1c0-771a-4119-a03b-be82a51e232d/resourceGroups/Contoso/providers/Microsoft.Storage/storageAccounts/diag500",
+                    "portalLink": "https://portal.azure.com/#resource//subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/Contoso/providers/Microsoft.Storage/storageAccounts/diag500"
+                },
+                "properties": {
+                    "key1": "value1",
+                    "key2": "value2"
+                }
+            }
+        };
+
+        let expected_response = {
+            alarm_schema: 'Azure Monitor Metric Alert',
+            alarm_schema_version: 2.0,
+            errors: [],
+            valid: true
+        };
+
+        let response = Validator(azure_monitor_metric_alert);
+
+        expect(response).to.deep.equal(expected_response);
+    });
+
     it('Validates a correct DataDog Service Health Alarm', function () {
         let datadog_service_alarm = {
             "meta": {

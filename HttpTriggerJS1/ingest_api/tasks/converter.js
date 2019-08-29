@@ -68,6 +68,45 @@ function ConvertToCam() {
             })
     }
 
+    function convertAzureMonitorMetricAlerttoCAM(azure_alarm, getTags, context) {
+
+        let alarm_map = {
+            'Activated': 'CRITICAL',
+            'Resolved': 'OK'
+        };
+
+        let occurred_at = moment.parseZone(azure_alarm.data.context.timestamp).toISOString();
+
+        let status = alarm_map[azure_alarm.data.status];
+
+        if (status === 'OK') {
+            occurred_at = provenance.informed_at;
+        }
+
+        return getTags(azure_alarm, context).then(
+            function(tags){
+                return {
+                    alarm_type: 'cloud',
+                    category: azure_alarm.data.context.condition.allOf[0].metricName,
+                    end_point_id: azure_alarm.data.context.resourceName,
+                    informer: azure_alarm.data.context.resourceName,
+                    message: azure_alarm.data.context.condition.allOf[0].metricName + ' ' + azure_alarm.data.context.condition.allOf[0].operator + ' ' + azure_alarm.data.context.condition.allOf[0].threshold + ' ' + azure_alarm.data.context.condition.allOf[0].metricUnit,
+                    occurred_at: occurred_at,
+                    reporter: 'Azure',
+                    status: status,
+                    domain: {
+                        cloud_account_id: azure_alarm.data.context.subscriptionId,
+                        cloud_region_name: azure_alarm.data.context.resourceRegion,
+                        cloud_namespace: azure_alarm.data.context.resourceType,
+                        cloud_raw_alarm: azure_alarm,
+                        provenance: {
+                            azure_alarm_ingest_api: provenance
+                        },
+                        cloud_tags: tags
+                    }
+                };
+            })
+    }
 
     function convertAzureHealthtoCAM(azure_alarm, getTags, context) {
 
@@ -174,76 +213,78 @@ function ConvertToCam() {
         if (context === 'test'){
             return
         }
-            context.log('Getting Token...' + resource + apiver);
-            var options = {
-                uri: process.env["MSI_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
-                headers: {
-                    'Secret': process.env["MSI_SECRET"]
-                }
-            };
-            return rp(options);
-        },
-        readResourceGroups = function (resource_group_metadata, apiver, token, context) {
-            context.log('Getting Tags for subscription:', resource_group_metadata.resource_group_name, resource_group_metadata.subscription_id);
-            var options = {
-                uri: 'https://management.azure.com/subscriptions/' + resource_group_metadata.subscription_id + '/resourcegroups?api-version=' + apiver,
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            };
-            return rp(options);
-        },
-        getAzureRG = function (event) {
-            return {
-                resource_group_name: event.context.resourceGroupName,
-                subscription_id: event.context.subscriptionId
-            };
+        context.log('Getting Token...' + resource + apiver);
+        var options = {
+            uri: process.env["MSI_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
+            headers: {
+                'Secret': process.env["MSI_SECRET"]
+            }
         };
-        this.withTRStandardTagAddedFromAzureTRTag = function (tags) {
-            _.forEach(_.keys(tags), function (tag_key) {
-                if (_.startsWith(tag_key, 'tr-')) {
-                    tags[tag_key.replace('tr-', 'tr:')] = tags[tag_key];
-                }
-            });
-            return tags;
+        return rp(options);
+    },
+    readResourceGroups = function (resource_group_metadata, apiver, token, context) {
+        context.log('Getting Tags for subscription:', resource_group_metadata.resource_group_name, resource_group_metadata.subscription_id);
+        var options = {
+            uri: 'https://management.azure.com/subscriptions/' + resource_group_metadata.subscription_id + '/resourcegroups?api-version=' + apiver,
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
         };
-        this.getTags = function (event, context) {
-            var tags = {},
-                resource_group_metadata = getAzureRG(event);
-            return getToken('https://management.azure.com/', '2017-09-01', context)
-                .then(function (result) {
-                    var token = JSON.parse(result).access_token;
-                    context.log('Got token:', token);
-                    return readResourceGroups(resource_group_metadata, subs_apiver, token, context)
-                        .then(function (tag_response) {
-                            var rgs = JSON.parse(tag_response).value;
-                            context.log('Got rgs:', rgs);
-                            var specific_rg = _.find(rgs, function (rg) {
-                                return rg.name.toLowerCase() === resource_group_metadata.resource_group_name.toLowerCase();
-                            });
-                            if (! _.isUndefined(specific_rg)) {
-                                tags = _.get(specific_rg, 'tags');
-                                context.log('Setting tags from event rg:', tags);
-                            }
-                            if (_.isUndefined(specific_rg) || _.isEqual( tags, {})) {
-                                // RG or tags not found. Try to get the tags from any available rg returned
-                                var tags_not_found = true;
-                                _.forEach(rgs, function (rg) {
-                                    if (_.has(rg, 'tags') && tags_not_found) {
-                                        tags = _.get(rg, 'tags');
-                                        context.log('Setting any tags found:', tags);
-                                        tags_not_found = false;
-                                    }
-                                });
-                            }
-                            return this.withTRStandardTagAddedFromAzureTRTag(tags);
-                        })
-                        .catch(function (err) {
-                            context.log('Error', err);
-                            return tags;
+        return rp(options);
+    },
+    getAzureRG = function (event) {
+        return {
+            resource_group_name: event.context.resourceGroupName,
+            subscription_id: event.context.subscriptionId
+        };
+    };
+
+    this.withTRStandardTagAddedFromAzureTRTag = function (tags) {
+        _.forEach(_.keys(tags), function (tag_key) {
+            if (_.startsWith(tag_key, 'tr-')) {
+                tags[tag_key.replace('tr-', 'tr:')] = tags[tag_key];
+            }
+        });
+        return tags;
+    };
+
+    this.getTags = function (event, context) {
+        var tags = {},
+            resource_group_metadata = getAzureRG(event);
+        return getToken('https://management.azure.com/', '2017-09-01', context)
+            .then(function (result) {
+                var token = JSON.parse(result).access_token;
+                context.log('Got token:', token);
+                return readResourceGroups(resource_group_metadata, subs_apiver, token, context)
+                    .then(function (tag_response) {
+                        var rgs = JSON.parse(tag_response).value;
+                        context.log('Got rgs:', rgs);
+                        var specific_rg = _.find(rgs, function (rg) {
+                            return rg.name.toLowerCase() === resource_group_metadata.resource_group_name.toLowerCase();
                         });
-                });
-        };
+                        if (! _.isUndefined(specific_rg)) {
+                            tags = _.get(specific_rg, 'tags');
+                            context.log('Setting tags from event rg:', tags);
+                        }
+                        if (_.isUndefined(specific_rg) || _.isEqual( tags, {})) {
+                            // RG or tags not found. Try to get the tags from any available rg returned
+                            var tags_not_found = true;
+                            _.forEach(rgs, function (rg) {
+                                if (_.has(rg, 'tags') && tags_not_found) {
+                                    tags = _.get(rg, 'tags');
+                                    context.log('Setting any tags found:', tags);
+                                    tags_not_found = false;
+                                }
+                            });
+                        }
+                        return this.withTRStandardTagAddedFromAzureTRTag(tags);
+                    })
+                    .catch(function (err) {
+                        context.log('Error', err);
+                        return tags;
+                    });
+            });
+    };
 
     this.convertToCam = function (alarm, alarm_schema, alarm_schema_version, context) {
         context.log(JSON.stringify(alarm, null, 4));
@@ -260,6 +301,9 @@ function ConvertToCam() {
         }
         if (alarm_schema === 'Azure Metric Alarm' && alarm_schema_version === 1.0) {
             return q(convertAzuretoCAM(alarm, this.getTags, context));
+        }
+        if (alarm_schema === 'Azure Monitor Metric Alert' && alarm_schema_version === 2.0) {
+            return q(convertAzureMonitorMetricAlerttoCAM(alarm, this.getTags, context));
         }
         if (alarm_schema === 'Azure Service Health' && alarm_schema_version === 1.0) {
             return q(convertAzureHealthtoCAM(alarm, this.getTags, context));
