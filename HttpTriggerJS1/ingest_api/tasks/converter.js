@@ -233,10 +233,17 @@ function ConvertToCam() {
         return rp(options);
     },
     getAzureRG = function (event) {
-        return {
-            resource_group_name: event.context.resourceGroupName,
-            subscription_id: event.context.subscriptionId
-        };
+        if (event.schemaId === 'AzureMonitorMetricAlert') {
+            return {
+                resource_group_name: event.data.context.resourceGroupName,
+                subscription_id: event.data.context.subscriptionId
+            };
+        } else {
+            return {
+                resource_group_name: event.context.resourceGroupName,
+                subscription_id: event.context.subscriptionId
+            };
+        }
     };
 
     this.withTRStandardTagAddedFromAzureTRTag = function (tags) {
@@ -249,7 +256,7 @@ function ConvertToCam() {
     };
 
     this.getTags = function (event, context) {
-        var tags = {},
+        let tags = {},
             resource_group_metadata = getAzureRG(event);
         return getToken('https://management.azure.com/', '2017-09-01', context)
             .then(function (result) {
