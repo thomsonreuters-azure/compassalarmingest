@@ -88,8 +88,8 @@ function ConvertToCam() {
                 return {
                     alarm_type: 'cloud',
                     category: azure_alarm.data.context.condition.allOf[0].metricName,
-                    end_point_id: azure_alarm.data.context.resourceName,
-                    informer: azure_alarm.data.context.resourceName,
+                    end_point_id: azure_alarm.data.context.name,
+                    informer: azure_alarm.data.context.resourceGroupName,
                     message: azure_alarm.data.context.condition.allOf[0].metricName + ' ' + azure_alarm.data.context.condition.allOf[0].operator + ' ' + azure_alarm.data.context.condition.allOf[0].threshold + ' ' + azure_alarm.data.context.condition.allOf[0].metricUnit,
                     occurred_at: occurred_at,
                     reporter: 'Azure',

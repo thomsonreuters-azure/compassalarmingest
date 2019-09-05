@@ -344,8 +344,8 @@ describe('converter', function () {
             let expected_response = {
                 'alarm_type': 'cloud',
                 'category': 'Failed Locations',
-                'end_point_id': 'testdc',
-                'informer': 'testdc',
+                'end_point_id': 'testdc-testdc-a72d304e-66d1-4f3c-a23f-62a5c718ab45',
+                'informer': 'eastus2-connected-risk-nonprod',
                 'message': 'Failed Locations GreaterThan 3 locations',
                 'occurred_at': '2018-06-22T13:29:50.000Z',
                 'reporter': 'Azure',
