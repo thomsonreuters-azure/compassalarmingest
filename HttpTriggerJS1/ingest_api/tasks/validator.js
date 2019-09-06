@@ -204,7 +204,7 @@ module.exports = function sanitise(event) {
           valid.alarm_schema_version = 4.0;
         }
 
-    } else if (event.hasOwnProperty('status') && event.hasOwnProperty('context')) {
+    } else if (event.hasOwnProperty('status') && event.hasOwnProperty('context') && event.context.hasOwnProperty('resourceId')) {
 
         if (event.context.hasOwnProperty('condition')) {
             valid = revalidator.validate(event, AzureMetricAlarm, {additionalProperties: true});
