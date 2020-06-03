@@ -1,6 +1,17 @@
 const
     q = require('q'),
-    https = require('https');
+    https = require('https'),
+    fs = require('fs');
+
+const trustedCa = [
+    'comodo_b64.cer',
+    'sectigo_b64.cer'
+];
+
+https.globalAgent.options.ca = [];
+for (const ca of trustedCa) {
+    https.globalAgent.options.ca.push(fs.readFileSync(__dirname + '/../certs/' + ca));
+}
 
 module.exports = function https_request(options, json_stringified_data, context) {
     'use strict';
