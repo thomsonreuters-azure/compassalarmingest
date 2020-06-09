@@ -16,6 +16,7 @@ exports.ingest = function (req, context) {
             'occurred_at',
             'context.timestamp',
             'data.context.timestamp',
+            'data.context.activityLog.eventTimestamp',
             'sp-timestamp'
         ];
         _.forEach(datetime_properties, function (datetime_property) {
