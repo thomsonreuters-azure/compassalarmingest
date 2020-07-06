@@ -259,9 +259,9 @@ function ConvertToCam() {
         }
         context.log('Getting Token...' + resource + apiver);
         let options = {
-            uri: process.env["MSI_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
+            uri: process.env["IDENTITY_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
             headers: {
-                'Secret': process.env["MSI_SECRET"]
+                'X-IDENTITY-HEADER': process.env["IDENTITY_HEADER"]
             }
         };
         return rp(options);
@@ -308,7 +308,7 @@ function ConvertToCam() {
     this.getTags = function (event, context) {
         let tags = {},
             resource_group_metadata = getAzureRG(event);
-        return getToken('https://management.azure.com/', '2017-09-01', context)
+        return getToken('https://management.azure.com/', '2019-08-01', context)
             .then(function (result) {
                 let token = JSON.parse(result).access_token;
                 context.log('Got token:', token);
