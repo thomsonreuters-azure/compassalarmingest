@@ -257,13 +257,13 @@ function ConvertToCam() {
         if (context === 'test'){
             return
         }
-        context.log('Getting Token...' + resource + apiver);
         let options = {
             uri: process.env["IDENTITY_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
             headers: {
                 'X-IDENTITY-HEADER': process.env["IDENTITY_HEADER"]
             }
         };
+        context.log('Getting Token...' + JSON.stringify(options, null, 4));
         return rp(options);
     },
     readResourceGroups = function (resource_group_metadata, apiver, token, context) {
