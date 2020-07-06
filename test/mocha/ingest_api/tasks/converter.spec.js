@@ -4,12 +4,12 @@ const
     root = '../../../../HttpTriggerJS1/',
 
     q = require('q'),
-    supertest = require('supertest'),
+    //supertest = require('supertest'),
     sinon = require('sinon'),
     chai = require('chai'),
     expect = chai.expect,
     sinonChai = require('sinon-chai'),
-    nock = require('nock'),
+    //nock = require('nock'),
     Converter = require(root + 'ingest_api/tasks/converter'),
     context = {
         log: function (msg) {
@@ -31,7 +31,7 @@ describe('converter', function () {
 
         converter = new Converter();
         converter.getTags = function () {
-            var deferred = q.defer();
+            let deferred = q.defer();
             deferred.resolve(converter.withTRStandardTagAddedFromAzureTRTag({
                 'tr-environment-type': 'PROD',
                 'tr-application-asset-insight-id': '203773',
@@ -594,6 +594,121 @@ describe('converter', function () {
             };
 
             return converter.convertToCam(azure_service_alarm, alarm_schema, alarm_schema_version, context)
+                .then(function (converted) {
+                    expect(converted).to.deep.equal(expected_response);
+                });
+        });
+
+        it('Converts a received Azure Monitor Common Alert', function () {
+
+            let azure_monitor_common_alert = {
+                "schemaId": "azureMonitorCommonAlertSchema",
+                "data": {
+                    "essentials": {
+                        "alertId": "/subscriptions/591155a6-3c8b-4447-a9b4-c33f2cd90a9e/providers/Microsoft.AlertsManagement/alerts/f54957543789e5fd9fb44179e94c3de4e82c9e05ba92d2188b79c41fdc51c2d8",
+                        "alertRule": "Test Alert for CAM Azure Service Integration",
+                        "severity": "Sev4",
+                        "signalType": "Activity Log",
+                        "monitorCondition": "Resolved",
+                        "monitoringService": "ServiceHealth",
+                        "alertTargetIDs": [
+                            "/subscriptions/591155a6-3c8b-4447-a9b4-c33f2cd90a9e"
+                        ],
+                        "originAlertId": "e89bc4eb-907a-6cbf-b13a-808a66dcee45",
+                        "firedDateTime": "2020-06-19T13:50:34.5088674",
+                        "description": "Active: Synthetic Service Health Alert",
+                        "essentialsVersion": "1.0",
+                        "alertContextVersion": "1.0"
+                    },
+                    "alertContext": {
+                        "authorization": null,
+                        "channels": 1,
+                        "claims": null,
+                        "caller": null,
+                        "correlationId": "f8fac9d6-009e-413a-b2c4-631672ab1901",
+                        "eventSource": 2,
+                        "eventTimestamp": "2020-06-16T17:05:23.9739605+00:00",
+                        "httpRequest": null,
+                        "eventDataId": "e89bc4eb-907a-6cbf-b13a-808a66dcee45",
+                        "level": 4,
+                        "operationName": "Microsoft.ServiceHealth/incident/action",
+                        "operationId": "f8fac9d6-009e-413a-b2c4-631672ab1901",
+                        "properties": {
+                            "title": "Synthetic Service Health Alert",
+                            "service": "Azure Resource Manager",
+                            "region": "Global",
+                            "communication": "This is a test of the logic app integration with Service\nHealth Alerts<p></p>",
+                            "incidentType": "Incident",
+                            "trackingId": "CT4H-N90",
+                            "impactStartTime": "2020-06-16T00:00:00Z",
+                            "impactedServices": "[{\"ImpactedRegions\":[{\"RegionName\":\"Global\"}],\"ServiceName\":\"Azure Resource Manager\"}]",
+                            "impactedServicesTableRows": "<tr>\r\n<td align='center' style='padding: 5px 10px; border-right:1px solid black; border-bottom:1px solid black'>Azure Resource Manager</td>\r\n<td align='center' style='padding: 5px 10px; border-bottom:1px solid black'>Global<br></td>\r\n</tr>\r\n",
+                            "defaultLanguageTitle": "Synthetic Service Health Alert",
+                            "defaultLanguageContent": "This is a test of the logic app integration with Service\nHealth Alerts<p></p>",
+                            "stage": "Active",
+                            "communicationId": "11000048243780",
+                            "isHIR": "false",
+                            "version": "0.1.1"
+                        },
+                        "status": "Active",
+                        "subStatus": null,
+                        "submissionTimestamp": "2020-06-19T13:50:34.5088674+00:00",
+                        "ResourceType": null
+                    }
+                }
+
+            };
+
+            let alarm_schema = 'Azure Monitor Common Alert',
+                alarm_schema_version = 1.0;
+
+            let expected_response = {
+                alarm_type: 'cloud',
+                category: 'Synthetic Service Health Alert',
+                domain: {
+                    cloud_raw_alarm : azure_monitor_common_alert.data,
+                    "cloud_account_id": "591155a6-3c8b-4447-a9b4-c33f2cd90a9e",
+                    "cloud_impacted_services": [
+                        {
+                            "ImpactedRegions": [
+                                {
+                                    "RegionName": "Global"
+                                }
+                            ],
+                            "ServiceName": "Azure Resource Manager"
+                        }
+                    ],
+                    "cloud_region_name": "Global",
+                    "cloud_tags": {
+                        "tr-application-asset-insight-id": "203773",
+                        "tr-environment-type": "PROD",
+                        "tr-financial-identifier": "23308",
+                        "tr:application-asset-insight-id": "203773",
+                        "tr:environment-type": "PROD",
+                        "tr:financial-identifier": "23308"
+                    },
+                    provenance: {
+                        azure_alarm_ingest_api: {
+                            informed_at: '2016-02-24T09:19:46.000Z',
+                            informer: 'Azure CAM API production'
+                        }
+                    }
+                },
+                end_point_id: 'Azure Resource Manager',
+                informer: 'ServiceHealth',
+                message: 'This is a test of the logic app integration with Service\nHealth Alerts<p></p>',
+                occurred_at: '2016-02-24T09:19:46.000Z',
+                reporter: 'Azure',
+                status: 'OK',
+                "correlation_signature": [
+                    "end_point_id",
+                    "domain.cloud_account_id",
+                    "domain.cloud_region_name",
+                    "category"
+                ]
+            };
+
+            return converter.convertToCam(azure_monitor_common_alert, alarm_schema, alarm_schema_version, context)
                 .then(function (converted) {
                     expect(converted).to.deep.equal(expected_response);
                 });

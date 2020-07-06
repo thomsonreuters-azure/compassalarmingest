@@ -5,12 +5,15 @@ const _ = require('lodash'),
     q = require('q'),
     rp = require('request-promise');
 
+let self;
 function ConvertToCam() {
 
     let provenance = {
         informed_at: moment.utc().toISOString(),
         informer: 'Azure CAM API ' + process.env['WEBSITE_SITE_NAME']
     };
+
+    self = this;
 
     function convertCAMtoCAM(cam_alarm) {
         _.merge(cam_alarm, {domain: {provenance: {azure_alarm_ingest_api: provenance}}});
@@ -106,6 +109,47 @@ function ConvertToCam() {
                     }
                 };
             })
+    }
+
+    function convertAzureMonitorCommonAlerttoCAM(azure_alarm, getTags, context) {
+
+        let alarm_map = {
+            'Fired': 'CRITICAL',
+            'Resolved': 'OK'
+        };
+
+        let occurred_at = moment.parseZone(azure_alarm.data.essentials.firedDateTime).toISOString();
+
+        let status = alarm_map[azure_alarm.data.essentials.monitorCondition];
+
+        if (status === 'OK') {
+            occurred_at = moment.parseZone(azure_alarm.data.essentials.resolvedDateTime).toISOString();
+        }
+
+        return getTags(azure_alarm, context).then(
+            function(tags){
+                return {
+                    alarm_type: 'cloud',
+                    category: azure_alarm.data.alertContext.properties.title,
+                    end_point_id: azure_alarm.data.alertContext.properties.service,
+                    informer: azure_alarm.data.essentials.monitoringService,
+                    message: azure_alarm.data.alertContext.properties.communication,
+                    occurred_at: occurred_at,
+                    reporter: 'Azure',
+                    status: status,
+                    domain: {
+                        cloud_region_name: azure_alarm.data.alertContext.properties.region,
+                        cloud_account_id: azure_alarm.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1],
+                        cloud_raw_alarm: azure_alarm.data,
+                        cloud_impacted_services: JSON.parse(azure_alarm.data.alertContext.properties.impactedServices),
+                        provenance: {
+                            azure_alarm_ingest_api: provenance
+                        },
+                        cloud_tags: tags
+                    },
+                    correlation_signature: ['end_point_id', 'domain.cloud_account_id', 'domain.cloud_region_name', 'category']
+                };
+            });
     }
 
     function convertAzureHealthtoCAM(azure_alarm, getTags, context) {
@@ -207,14 +251,14 @@ function ConvertToCam() {
 
 
 
-    var subs_apiver = '2018-02-01';
+    let subs_apiver = '2018-02-01';
 
-    var getToken = function (resource, apiver, context) {
+    let getToken = function (resource, apiver, context) {
         if (context === 'test'){
             return
         }
         context.log('Getting Token...' + resource + apiver);
-        var options = {
+        let options = {
             uri: process.env["MSI_ENDPOINT"] + '/?resource=' + resource + '&api-version=' + apiver,
             headers: {
                 'Secret': process.env["MSI_SECRET"]
@@ -224,7 +268,7 @@ function ConvertToCam() {
     },
     readResourceGroups = function (resource_group_metadata, apiver, token, context) {
         context.log('Getting Tags for subscription:', resource_group_metadata.resource_group_name, resource_group_metadata.subscription_id);
-        var options = {
+        let options = {
             uri: 'https://management.azure.com/subscriptions/' + resource_group_metadata.subscription_id + '/resourcegroups?api-version=' + apiver,
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -237,6 +281,11 @@ function ConvertToCam() {
             return {
                 resource_group_name: event.data.context.resourceGroupName,
                 subscription_id: event.data.context.subscriptionId
+            };
+        } else if (event.schemaId === 'azureMonitorCommonAlertSchema') {
+            return {
+                resource_group_name: 'No resource groups for ServiceHealth Common alerts',
+                subscription_id: event.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1]
             };
         } else {
             return {
@@ -260,13 +309,13 @@ function ConvertToCam() {
             resource_group_metadata = getAzureRG(event);
         return getToken('https://management.azure.com/', '2017-09-01', context)
             .then(function (result) {
-                var token = JSON.parse(result).access_token;
+                let token = JSON.parse(result).access_token;
                 context.log('Got token:', token);
                 return readResourceGroups(resource_group_metadata, subs_apiver, token, context)
                     .then(function (tag_response) {
-                        var rgs = JSON.parse(tag_response).value;
+                        let rgs = JSON.parse(tag_response).value;
                         context.log('Got rgs:', rgs);
-                        var specific_rg = _.find(rgs, function (rg) {
+                        let specific_rg = _.find(rgs, function (rg) {
                             return rg.name.toLowerCase() === resource_group_metadata.resource_group_name.toLowerCase();
                         });
                         if (! _.isUndefined(specific_rg)) {
@@ -275,7 +324,7 @@ function ConvertToCam() {
                         }
                         if (_.isUndefined(specific_rg) || _.isEqual( tags, {})) {
                             // RG or tags not found. Try to get the tags from any available rg returned
-                            var tags_not_found = true;
+                            let tags_not_found = true;
                             _.forEach(rgs, function (rg) {
                                 if (_.has(rg, 'tags') && tags_not_found) {
                                     tags = _.get(rg, 'tags');
@@ -284,7 +333,7 @@ function ConvertToCam() {
                                 }
                             });
                         }
-                        return this.withTRStandardTagAddedFromAzureTRTag(tags);
+                        return self.withTRStandardTagAddedFromAzureTRTag(tags);
                     })
                     .catch(function (err) {
                         context.log('Error', err);
@@ -311,6 +360,9 @@ function ConvertToCam() {
         }
         if (alarm_schema === 'Azure Monitor Metric Alert' && alarm_schema_version === 2.0) {
             return q(convertAzureMonitorMetricAlerttoCAM(alarm, this.getTags, context));
+        }
+        if (alarm_schema === 'Azure Monitor Common Alert' && alarm_schema_version === 1.0) {
+            return q(convertAzureMonitorCommonAlerttoCAM(alarm, this.getTags, context));
         }
         if (alarm_schema === 'Azure Service Health' && alarm_schema_version === 1.0) {
             return q(convertAzureHealthtoCAM(alarm, this.getTags, context));
