@@ -272,7 +272,8 @@ function ConvertToCam() {
             uri: 'https://management.azure.com/subscriptions/' + resource_group_metadata.subscription_id + '/resourcegroups?api-version=' + apiver,
             headers: {
                 'Authorization': 'Bearer ' + token
-            }
+            },
+            strictSSL: false
         };
         return rp(options);
     },
