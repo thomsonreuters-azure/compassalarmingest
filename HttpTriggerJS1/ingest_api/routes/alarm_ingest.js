@@ -8,11 +8,11 @@ const
     Converter = require('../tasks/converter');
 
 exports.ingest = function (req, context) {
-    context.log('Ingest:', req.body);
+    context.log('Ingest:', JSON.stringify(req.body, null, 4));
     req.body = datetimesToString(req.body);
     function datetimesToString (body){
     // Azure bug strips quotes from timestamps making them appear to be an object when they have a dot before millisec
-        var datetime_properties = [
+        let datetime_properties = [
             'occurred_at',
             'context.timestamp',
             'data.context.timestamp',
@@ -20,7 +20,7 @@ exports.ingest = function (req, context) {
             'sp-timestamp'
         ];
         _.forEach(datetime_properties, function (datetime_property) {
-            var date_value = _.get(body, datetime_property);
+            let date_value = _.get(body, datetime_property);
             if (_.has(body, datetime_property)) {
                 context.log('Has timestamp:', datetime_property, date_value);
                 if (moment.isDate(_.get(body, datetime_property))){
