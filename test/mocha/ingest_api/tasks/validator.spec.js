@@ -423,7 +423,7 @@ describe('validator', function () {
         expect(response).to.deep.equal(expected_response);
     });
 
-    it('Validates a correct Azure Monitor Common Alert', function () {
+    it('Validates a correct Service Health Azure Monitor Common Alert', function () {
         let azure_common_alert = {
             "schemaId": "azureMonitorCommonAlertSchema",
             "data": {
@@ -483,7 +483,121 @@ describe('validator', function () {
         };
 
         let expected_response = {
-            alarm_schema: 'Azure Monitor Common Alert',
+            alarm_schema: 'ServiceHealth Azure Monitor Common Alert',
+            alarm_schema_version: 1.0,
+            errors: [],
+            valid: true
+        };
+
+        let response = Validator(azure_common_alert);
+
+        expect(response).to.deep.equal(expected_response);
+    });
+
+    it('Validates a correct Platform Azure Monitor Common Alert', function () {
+        let azure_common_alert = {
+            "schemaId": "azureMonitorCommonAlertSchema",
+            "data": {
+                "essentials": {
+                    "alertId": "/subscriptions/43526096-985b-404c-bca3-423ec300d670/providers/Microsoft.AlertsManagement/alerts/e366bd70-6331-4446-ba5b-9a6af6d6db44",
+                    "alertRule": "ModuleQ-CS-ArticleSyncCount",
+                    "severity": "Sev4",
+                    "signalType": "Metric",
+                    "monitorCondition": "Fired",
+                    "monitoringService": "Platform",
+                    "alertTargetIDs": [
+                        "/subscriptions/43526096-985b-404c-bca3-423ec300d670/resourcegroups/moduleqrftqc/providers/microsoft.insights/components/mq-moduleqrftqc"
+                    ],
+                    "originAlertId": "43526096-985b-404c-bca3-423ec300d670_moduleqrftqc_microsoft.insights_metricalerts_ModuleQ-CS-ArticleSyncCount_2127843169",
+                    "firedDateTime": "2020-07-15T04:59:15.380Z",
+                    "description": "MouduleQ Content Service Article Count Alarm Rule",
+                    "essentialsVersion": "1.0",
+                    "alertContextVersion": "1.0"
+                },
+                "alertContext": {
+                    "properties": null,
+                    "conditionType": "SingleResourceMultipleMetricCriteria",
+                    "condition": {
+                        "windowSize": "PT1H",
+                        "allOf": [
+                            {
+                                "metricName": "Alert_CS_ArticleSyncSliceAddedCount",
+                                "metricNamespace": "Azure.ApplicationInsights",
+                                "operator": "LessThanOrEqual",
+                                "threshold": "100",
+                                "timeAggregation": "Average",
+                                "dimensions": [
+                                    {
+                                        "name": "Microsoft.ResourceId",
+                                        "value": "/subscriptions/43526096-985b-404c-bca3-423ec300d670/resourceGroups/moduleqrftqc/providers/microsoft.insights/components/MQ-moduleqrftqc"
+                                    }
+                                ],
+                                "metricValue": 7,
+                                "webTestName": null
+                            }
+                        ],
+                        "windowStartTime": "2020-07-15T03:56:08.996Z",
+                        "windowEndTime": "2020-07-15T04:56:08.996Z"
+                    }
+                }
+            }
+        };
+
+        let expected_response = {
+            alarm_schema: 'Platform Azure Monitor Common Alert',
+            alarm_schema_version: 1.0,
+            errors: [],
+            valid: true
+        };
+
+        let response = Validator(azure_common_alert);
+
+        expect(response).to.deep.equal(expected_response);
+    });
+
+    it('Validates a correct Application Insights Azure Monitor Common Alert', function () {
+        let azure_common_alert = {
+            "schemaId": "azureMonitorCommonAlertSchema",
+            "data": {
+                "essentials": {
+                    "alertId": "/subscriptions/43526096-985b-404c-bca3-423ec300d670/providers/Microsoft.AlertsManagement/alerts/2c1784d3-c90e-4eeb-aee9-fd4c4c431834",
+                    "alertRule": "ModuleQ-Non-Prod-Log-Alert",
+                    "severity": "Sev4",
+                    "signalType": "Log",
+                    "monitorCondition": "Fired",
+                    "monitoringService": "Application Insights",
+                    "alertTargetIDs": [
+                        "/subscriptions/43526096-985b-404c-bca3-423ec300d670/resourcegroups/moduleqrftqc/providers/microsoft.insights/components/mq-moduleqrftqc"
+                    ],
+                    "originAlertId": "8bf45d80-ae21-4959-b114-8a0559f5d411",
+                    "firedDateTime": "2020-07-15T08:44:29.185Z",
+                    "description": "ModuleQ Non-Prod Log Alert Rule for Application Insights",
+                    "essentialsVersion": "1.0",
+                    "alertContextVersion": "1.1"
+                },
+                "alertContext": {
+                    "SearchQuery": "traces|where severityLevel >1",
+                    "SearchIntervalStartTimeUtc": "2020-07-13T08:44:23.000Z",
+                    "SearchIntervalEndtimeUtc": "2020-07-15T08:44:23.000Z",
+                    "ResultCount": 103,
+                    "LinkToSearchResults": "https://portal.azure.com#@f44f9347-6dbe-470e-ac29-2dbe7faa68bd/blade/Microsoft_Azure_Monitoring_Logs/LogsBlade/source/Alerts.EmailLinks/scope/%7B%22resources%22%3A%5B%7B%22resourceId%22%3A%22%2Fsubscriptions%2F43526096-985b-404c-bca3-423ec300d670%2FresourceGroups%2Fmoduleqrftqc%2Fproviders%2FMicrosoft.Insights%2Fcomponents%2FMQ-moduleqrftqc%22%7D%5D%7D/q/eJwrKUpMTi2uKc9ILUpVKE4tSy3KLKn0AdI5CnaGAA%3D%3D/prettify/1/timespan/2020-07-13T08%3a44%3a23.0000000Z%2f2020-07-15T08%3a44%3a23.0000000Z",
+                    "LinkToFilteredSearchResultsUI": "https://portal.azure.com#@f44f9347-6dbe-470e-ac29-2dbe7faa68bd/blade/Microsoft_Azure_Monitoring_Logs/LogsBlade/source/Alerts.EmailLinks/scope/%7B%22resources%22%3A%5B%7B%22resourceId%22%3A%22%2Fsubscriptions%2F43526096-985b-404c-bca3-423ec300d670%2FresourceGroups%2Fmoduleqrftqc%2Fproviders%2FMicrosoft.Insights%2Fcomponents%2FMQ-moduleqrftqc%22%7D%5D%7D/q/eJwrKUpMTi2uKc9ILUpVKE4tSy3KLKn0AdI5CnaGAA%3D%3D/prettify/1/timespan/2020-07-13T08%3a44%3a23.0000000Z%2f2020-07-15T08%3a44%3a23.0000000Z",
+                    "LinkToSearchResultsAPI": "https://api.applicationinsights.io/v1/apps/7260f068-d48f-4e80-badb-697baecc5c81/query?query=traces%7Cwhere%20severityLevel%20%3E1&timespan=2020-07-13T08%3a44%3a23.0000000Z%2f2020-07-15T08%3a44%3a23.0000000Z",
+                    "LinkToFilteredSearchResultsAPI": "https://api.applicationinsights.io/v1/apps/7260f068-d48f-4e80-badb-697baecc5c81/query?query=traces%7Cwhere%20severityLevel%20%3E1&timespan=2020-07-13T08%3a44%3a23.0000000Z%2f2020-07-15T08%3a44%3a23.0000000Z",
+                    "SearchIntervalDurationMin": "2880",
+                    "AlertType": "Number of results",
+                    "IncludeSearchResults": true,
+                    "SearchIntervalInMinutes": "2880",
+                    "Threshold": 1,
+                    "Operator": "Greater Than",
+                    "ApplicationId": "7260f068-d48f-4e80-badb-697baecc5c81",
+                    "IncludedSearchResults": "False"
+                }
+            }
+        };
+
+        let expected_response = {
+            alarm_schema: 'Application Insights Azure Monitor Common Alert',
             alarm_schema_version: 1.0,
             errors: [],
             valid: true

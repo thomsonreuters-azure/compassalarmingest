@@ -174,7 +174,7 @@ const AzureMonitorMetricAlert = {
     }
 };
 
-const AzureMonitorCommonAlert = {
+const ServiceHealthAzureMonitorCommonAlert = {
     properties: {
         //mandatory fields
         schemaId: {type: 'string', allowEmpty: false, required: true, enum: ['azureMonitorCommonAlertSchema']},
@@ -204,7 +204,91 @@ const AzureMonitorCommonAlert = {
                             required: true,
                             enum: ['Fired', 'Resolved']
                         },
-                        monitoringService: {type: 'string', allowEmpty: false, required: true},
+                        monitoringService: {type: 'string', allowEmpty: false, required: true, enum: ['ServiceHealth']},
+                        alertTargetIDs: {type: 'array', allowEmpty: false, required: true},
+                        originAlertId: {type: 'string', allowEmpty: false, required: true},
+                        firedDateTime: {type: ['string', 'object'], allowEmpty: false, required: true},
+                        resolvedDateTime: {type: ['string', 'object'], allowEmpty: false, required: false},
+                        description: {type: 'string', allowEmpty: true, required: true}
+                    }
+                }
+            }
+        }
+    }
+};
+const PlatformAzureMonitorCommonAlert = {
+    properties: {
+        //mandatory fields
+        schemaId: {type: 'string', allowEmpty: false, required: true, enum: ['azureMonitorCommonAlertSchema']},
+        data: {
+            type: 'object', allowEmpty: false, required: true,
+            properties: {
+                essentials: {
+                    type: 'object', allowEmpty: false, required: true,
+                    properties: {
+                        alertId: {type: 'string', allowEmpty: false, required: true},
+                        alertRule: {type: 'string', allowEmpty: false, required: true},
+                        severity: {
+                            type: 'string',
+                            allowEmpty: false,
+                            required: true,
+                            enum: ['Sev0', 'Sev1', 'Sev2', 'Sev3', 'Sev4']
+                        },
+                        signalType: {
+                            type: 'string',
+                            allowEmpty: false,
+                            required: true,
+                            enum: ['Metric', 'Log', 'Activity Log']
+                        },
+                        monitorCondition: {
+                            type: 'string',
+                            allowEmpty: false,
+                            required: true,
+                            enum: ['Fired', 'Resolved']
+                        },
+                        monitoringService: {type: 'string', allowEmpty: false, required: true, enum: ['Platform']},
+                        alertTargetIDs: {type: 'array', allowEmpty: false, required: true},
+                        originAlertId: {type: 'string', allowEmpty: false, required: true},
+                        firedDateTime: {type: ['string', 'object'], allowEmpty: false, required: true},
+                        resolvedDateTime: {type: ['string', 'object'], allowEmpty: false, required: false},
+                        description: {type: 'string', allowEmpty: true, required: true}
+                    }
+                }
+            }
+        }
+    }
+};
+const ApplicationInsightsAzureMonitorCommonAlert = {
+    properties: {
+        //mandatory fields
+        schemaId: {type: 'string', allowEmpty: false, required: true, enum: ['azureMonitorCommonAlertSchema']},
+        data: {
+            type: 'object', allowEmpty: false, required: true,
+            properties: {
+                essentials: {
+                    type: 'object', allowEmpty: false, required: true,
+                    properties: {
+                        alertId: {type: 'string', allowEmpty: false, required: true},
+                        alertRule: {type: 'string', allowEmpty: false, required: true},
+                        severity: {
+                            type: 'string',
+                            allowEmpty: false,
+                            required: true,
+                            enum: ['Sev0', 'Sev1', 'Sev2', 'Sev3', 'Sev4']
+                        },
+                        signalType: {
+                            type: 'string',
+                            allowEmpty: false,
+                            required: true,
+                            enum: ['Metric', 'Log', 'Activity Log']
+                        },
+                        monitorCondition: {
+                            type: 'string',
+                            allowEmpty: false,
+                            required: true,
+                            enum: ['Fired', 'Resolved']
+                        },
+                        monitoringService: {type: 'string', allowEmpty: false, required: true, enum: ['Application Insights']},
                         alertTargetIDs: {type: 'array', allowEmpty: false, required: true},
                         originAlertId: {type: 'string', allowEmpty: false, required: true},
                         firedDateTime: {type: ['string', 'object'], allowEmpty: false, required: true},
@@ -264,9 +348,19 @@ module.exports = function sanitise(event) {
         valid.alarm_schema_version = 2.0;
 
     } else if (event.hasOwnProperty('schemaId') && event.hasOwnProperty('data') && event.schemaId === 'azureMonitorCommonAlertSchema') {
-        valid = revalidator.validate(event, AzureMonitorCommonAlert, {additionalProperties: true});
-        valid.alarm_schema = 'Azure Monitor Common Alert';
-        valid.alarm_schema_version = 1.0;
+        if (event.data.hasOwnProperty('essentials') && event.data.essentials.hasOwnProperty('monitoringService') && event.data.essentials.monitoringService === 'ServiceHealth') {
+            valid = revalidator.validate(event, ServiceHealthAzureMonitorCommonAlert, {additionalProperties: true});
+            valid.alarm_schema = 'ServiceHealth Azure Monitor Common Alert';
+            valid.alarm_schema_version = 1.0;
+        } else if (event.data.hasOwnProperty('essentials') && event.data.essentials.hasOwnProperty('monitoringService') && event.data.essentials.monitoringService === 'Platform') {
+            valid = revalidator.validate(event, PlatformAzureMonitorCommonAlert, {additionalProperties: true});
+            valid.alarm_schema = 'Platform Azure Monitor Common Alert';
+            valid.alarm_schema_version = 1.0;
+        } else if (event.data.hasOwnProperty('essentials') && event.data.essentials.hasOwnProperty('monitoringService') && event.data.essentials.monitoringService === 'Application Insights') {
+            valid = revalidator.validate(event, ApplicationInsightsAzureMonitorCommonAlert, {additionalProperties: true});
+            valid.alarm_schema = 'Application Insights Azure Monitor Common Alert';
+            valid.alarm_schema_version = 1.0;
+        }
 
     } else if (event.hasOwnProperty('schemaId') && event.hasOwnProperty('data')) {
         valid = revalidator.validate(event, AzureActivityAlarm, {additionalProperties: true});

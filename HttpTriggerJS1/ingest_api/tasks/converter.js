@@ -111,7 +111,50 @@ function ConvertToCam() {
             })
     }
 
-    function convertAzureMonitorCommonAlerttoCAM(azure_alarm, getTags, context) {
+    function convertServiceHealthAzureMonitorCommonAlerttoCAM(azure_alarm, context) {
+
+        let alarm_map = {
+            'Fired': 'CRITICAL',
+            'Resolved': 'OK'
+        };
+
+        let occurred_at = moment.parseZone(azure_alarm.data.essentials.firedDateTime).toISOString();
+
+        let status = alarm_map[azure_alarm.data.essentials.monitorCondition];
+
+        if (status === 'OK') {
+            occurred_at = moment.parseZone(azure_alarm.data.essentials.resolvedDateTime).toISOString();
+        }
+
+        context.log("ServiceHealth alarm for", azure_alarm.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1]);
+
+        return {
+            alarm_type: 'cloud',
+            category: azure_alarm.data.alertContext.properties.title,
+            end_point_id: azure_alarm.data.alertContext.properties.service,
+            informer: azure_alarm.data.essentials.monitoringService,
+            message: azure_alarm.data.alertContext.properties.communication,
+            occurred_at: occurred_at,
+            reporter: 'Azure',
+            status: status,
+            domain: {
+                cloud_region_name: azure_alarm.data.alertContext.properties.region,
+                cloud_account_id: azure_alarm.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1],
+                cloud_raw_alarm: azure_alarm.data,
+                cloud_impacted_services: JSON.parse(azure_alarm.data.alertContext.properties.impactedServices),
+                provenance: {
+                    azure_alarm_ingest_api: provenance
+                },
+                cloud_tags: {
+                    'tr:environment-type': 'PROD',
+                    'tr:application-asset-insight-id': '205982'
+                }
+            },
+            correlation_signature: ['end_point_id', 'domain.cloud_account_id', 'domain.cloud_region_name', 'category']
+        };
+    }
+
+    function convertPlatformAzureMonitorCommonAlerttoCAM(azure_alarm, getTags, context) {
 
         let alarm_map = {
             'Fired': 'CRITICAL',
@@ -127,27 +170,104 @@ function ConvertToCam() {
         }
 
         return getTags(azure_alarm, context).then(
-            function(tags){
+            function(tags) {
                 return {
                     alarm_type: 'cloud',
-                    category: azure_alarm.data.alertContext.properties.title,
-                    end_point_id: azure_alarm.data.alertContext.properties.service,
+                    category: azure_alarm.data.essentials.alertRule,
+                    end_point_id: azure_alarm.data.essentials.alertTargetIDs[0],
                     informer: azure_alarm.data.essentials.monitoringService,
-                    message: azure_alarm.data.alertContext.properties.communication,
+                    message: azure_alarm.data.essentials.description,
                     occurred_at: occurred_at,
                     reporter: 'Azure',
                     status: status,
                     domain: {
-                        cloud_region_name: azure_alarm.data.alertContext.properties.region,
                         cloud_account_id: azure_alarm.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1],
                         cloud_raw_alarm: azure_alarm.data,
-                        cloud_impacted_services: JSON.parse(azure_alarm.data.alertContext.properties.impactedServices),
                         provenance: {
                             azure_alarm_ingest_api: provenance
                         },
                         cloud_tags: tags
                     },
-                    correlation_signature: ['end_point_id', 'domain.cloud_account_id', 'domain.cloud_region_name', 'category']
+                    correlation_signature: ['end_point_id', 'domain.cloud_account_id', 'category']
+                };
+            }, function(error) {
+                context.log("Problem getting tags", error.toString());
+                return {
+                    alarm_type: 'cloud',
+                    category: azure_alarm.data.essentials.alertRule,
+                    end_point_id: azure_alarm.data.essentials.alertTargetIDs[0],
+                    informer: azure_alarm.data.essentials.monitoringService,
+                    message: azure_alarm.data.essentials.description,
+                    occurred_at: occurred_at,
+                    reporter: 'Azure',
+                    status: status,
+                    domain: {
+                        cloud_account_id: azure_alarm.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1],
+                        cloud_raw_alarm: azure_alarm.data,
+                        provenance: {
+                            azure_alarm_ingest_api: provenance
+                        }
+                    },
+                    correlation_signature: ['end_point_id', 'domain.cloud_account_id', 'category']
+                };
+            });
+    }
+
+    function convertApplicationInsightsAzureMonitorCommonAlerttoCAM(azure_alarm, getTags, context) {
+
+        let alarm_map = {
+            'Fired': 'CRITICAL',
+            'Resolved': 'OK'
+        };
+
+        let occurred_at = moment.parseZone(azure_alarm.data.essentials.firedDateTime).toISOString();
+
+        let status = alarm_map[azure_alarm.data.essentials.monitorCondition];
+
+        if (status === 'OK') {
+            occurred_at = moment.parseZone(azure_alarm.data.essentials.resolvedDateTime).toISOString();
+        }
+
+        return getTags(azure_alarm, context).then(
+            function(tags) {
+                return {
+                    alarm_type: 'cloud',
+                    category: azure_alarm.data.essentials.alertRule,
+                    end_point_id: azure_alarm.data.essentials.alertTargetIDs[0],
+                    informer: azure_alarm.data.essentials.monitoringService,
+                    message: azure_alarm.data.essentials.description,
+                    occurred_at: occurred_at,
+                    reporter: 'Azure',
+                    status: status,
+                    domain: {
+                        cloud_account_id: azure_alarm.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1],
+                        cloud_raw_alarm: azure_alarm.data,
+                        provenance: {
+                            azure_alarm_ingest_api: provenance
+                        },
+                        cloud_tags: tags
+                    },
+                    correlation_signature: ['end_point_id', 'domain.cloud_account_id', 'category']
+                };
+            }, function(error) {
+                context.log("Problem getting tags", error.toString());
+                return {
+                    alarm_type: 'cloud',
+                    category: azure_alarm.data.essentials.alertRule,
+                    end_point_id: azure_alarm.data.essentials.alertTargetIDs[0],
+                    informer: azure_alarm.data.essentials.monitoringService,
+                    message: azure_alarm.data.essentials.description,
+                    occurred_at: occurred_at,
+                    reporter: 'Azure',
+                    status: status,
+                    domain: {
+                        cloud_account_id: azure_alarm.data.essentials.alertId.match(/^\/subscriptions\/([^\/]*)\/.*/)[1],
+                        cloud_raw_alarm: azure_alarm.data,
+                        provenance: {
+                            azure_alarm_ingest_api: provenance
+                        }
+                    },
+                    correlation_signature: ['end_point_id', 'domain.cloud_account_id', 'category']
                 };
             });
     }
@@ -362,8 +482,14 @@ function ConvertToCam() {
         if (alarm_schema === 'Azure Monitor Metric Alert' && alarm_schema_version === 2.0) {
             return q(convertAzureMonitorMetricAlerttoCAM(alarm, this.getTags, context));
         }
-        if (alarm_schema === 'Azure Monitor Common Alert' && alarm_schema_version === 1.0) {
-            return q(convertAzureMonitorCommonAlerttoCAM(alarm, this.getTags, context));
+        if (alarm_schema === 'ServiceHealth Azure Monitor Common Alert' && alarm_schema_version === 1.0) {
+            return q(convertServiceHealthAzureMonitorCommonAlerttoCAM(alarm, context));
+        }
+        if (alarm_schema === 'Platform Azure Monitor Common Alert' && alarm_schema_version === 1.0) {
+            return q(convertPlatformAzureMonitorCommonAlerttoCAM(alarm, this.getTags, context));
+        }
+        if (alarm_schema === 'Application Insights Azure Monitor Common Alert' && alarm_schema_version === 1.0) {
+            return q(convertApplicationInsightsAzureMonitorCommonAlerttoCAM(alarm, this.getTags, context));
         }
         if (alarm_schema === 'Azure Service Health' && alarm_schema_version === 1.0) {
             return q(convertAzureHealthtoCAM(alarm, this.getTags, context));
