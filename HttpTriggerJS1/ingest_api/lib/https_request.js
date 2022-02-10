@@ -18,7 +18,7 @@ module.exports = function https_request(options, json_stringified_data, context)
     context.log('https_request');
     options.path = '/alarm-ingest';
     options.pathname = '/alarm-ingest';
-    options.host = 'api.alarms.monitor.aws.compass.thomsonreuters.com';
+    options.host = 'aws-alarm.refinitiv.com';
     options.port = '443';
     context.log('OPTIONS', options);
     var deferred = q.defer();
